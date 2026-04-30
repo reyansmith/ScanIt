@@ -105,15 +105,15 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={160}>
               <AreaChart data={mockWeekly}>
                 <defs>
-                  <linearGradient id="sodiumGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#008080" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#008080" stopOpacity={0} />
+                  <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis hide />
                 <Tooltip formatter={(v, n) => [`${v}mg`, n === 'sodium' ? 'Sodium' : 'Sugar']} />
-                <Area type="monotone" dataKey="sodium" stroke="#008080" fill="url(#sodiumGrad)" strokeWidth={2} />
+                <Area type="natural" dataKey="sodium" stroke="#2563EB" fill="url(#blueGrad)" strokeWidth={2.5} />
               </AreaChart>
             </ResponsiveContainer>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '.75rem', marginTop: '1rem' }}>
