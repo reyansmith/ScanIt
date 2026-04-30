@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
+import { Globe, MessageCircle, Utensils, Activity, AlertTriangle, Loader2, Send, ThumbsUp, ThumbsDown } from 'lucide-react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 
 const CATEGORIES = [
-  { key: null, label: '🌐 All Posts' },
-  { key: 'general', label: '💬 General' },
-  { key: 'recipe', label: '🍽️ Recipes' },
-  { key: 'symptom', label: '🩺 Symptoms' },
+  { key: null, label: <span style={{display:'flex', alignItems:'center', gap:'0.3rem'}}><Globe size={14}/> All Posts</span> },
+  { key: 'general', label: <span style={{display:'flex', alignItems:'center', gap:'0.3rem'}}><MessageCircle size={14}/> General</span> },
+  { key: 'recipe', label: <span style={{display:'flex', alignItems:'center', gap:'0.3rem'}}><Utensils size={14}/> Recipes</span> },
+  { key: 'symptom', label: <span style={{display:'flex', alignItems:'center', gap:'0.3rem'}}><Activity size={14}/> Symptoms</span> },
 ];
 
 export default function Community() {
@@ -75,9 +76,9 @@ export default function Community() {
               <div className="form-group">
                 <label className="form-label">Category</label>
                 <select className="form-select" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  <option value="general">💬 General Discussion</option>
-                  <option value="recipe">🍽️ Recipe Exchange</option>
-                  <option value="symptom">🩺 Symptom Tracking</option>
+                  <option value="general">General Discussion</option>
+                  <option value="recipe">Recipe Exchange</option>
+                  <option value="symptom">Symptom Tracking</option>
                 </select>
               </div>
               <div className="form-group">
@@ -91,9 +92,9 @@ export default function Community() {
                   style={{ resize: 'vertical', fontFamily: 'inherit' }}
                   value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} required />
               </div>
-              {formError && <div className="alert-item danger" style={{ marginBottom: '1rem' }}><span>⚠️</span><p>{formError}</p></div>}
+              {formError && <div className="alert-item danger" style={{ marginBottom: '1rem' }}><span><AlertTriangle size={18} /></span><p>{formError}</p></div>}
               <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? '⏳ Publishing...' : '📢 Publish Post'}
+                {submitting ? <><Loader2 className="spin" size={16} /> Publishing...</> : <><Send size={16} /> Publish Post</>}
               </button>
             </form>
           </div>
@@ -110,10 +111,10 @@ export default function Community() {
         </div>
 
         {/* Posts */}
-        {loading && <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>⏳ Loading posts…</p>}
+        {loading && <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3rem', color: 'var(--text-muted)', gap: '0.5rem' }}><Loader2 className="spin" size={20} /> Loading posts…</div>}
         {!loading && posts.length === 0 && (
           <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-            <p style={{ fontSize: '2rem' }}>💬</p>
+            <p style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}><MessageCircle size={32} color="var(--slate)" /></p>
             <p>No posts yet. Be the first to share!</p>
           </div>
         )}
@@ -136,8 +137,8 @@ export default function Community() {
                   )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem', alignItems: 'center', minWidth: 60 }}>
-                  <button className="vote-btn up" onClick={() => vote(p.id, 'up')}>👍 {p.upvotes}</button>
-                  <button className="vote-btn down" onClick={() => vote(p.id, 'down')}>👎 {p.downvotes}</button>
+                  <button className="vote-btn up" onClick={() => vote(p.id, 'up')}><ThumbsUp size={14} /> {p.upvotes}</button>
+                  <button className="vote-btn down" onClick={() => vote(p.id, 'down')}><ThumbsDown size={14} /> {p.downvotes}</button>
                 </div>
               </div>
             </div>

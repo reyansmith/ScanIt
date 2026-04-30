@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Bot, Loader2, Send, X } from 'lucide-react';
 import useStore from '../store/useStore';
 import api from '../api/client';
 
@@ -12,7 +13,7 @@ const SUGGESTIONS = [
 export default function MediBot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'bot', content: 'Hi! I\'m MediBot 🩺 I know your health profile and the product you just scanned. Ask me anything!' }
+    { role: 'bot', content: 'Hi! I\'m MediBot. I know your health profile and the product you just scanned. Ask me anything!' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -81,23 +82,26 @@ export default function MediBot() {
 
   return (
     <>
-      <button className="medibot-trigger" onClick={() => setOpen(!open)} aria-label="Open MediBot">
-        {open ? '✕' : '🤖'}
+      <button className="medibot-trigger" onClick={() => setOpen(!open)} aria-label="Open MediBot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {open ? <X size={24} /> : <Bot size={24} />}
       </button>
       {open && (
         <div className="medibot-panel fade-in">
           <div className="medibot-header">
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '.95rem' }}>🤖 MediBot</div>
-              <div style={{ fontSize: '.75rem', opacity: .85 }}>AI Health Assistant</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Bot size={20} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '.95rem' }}>MediBot</div>
+                <div style={{ fontSize: '.75rem', opacity: .85 }}>AI Health Assistant</div>
+              </div>
             </div>
-            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.1rem' }}>✕</button>
+            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={18} /></button>
           </div>
 
           <div className="medibot-messages">
             {messages.map((m, i) => (
               <div key={i} className={`chat-msg ${m.role}`}>
-                {m.content || <span className="spin" style={{ display: 'inline-block' }}>⏳</span>}
+                {m.content || <span className="spin" style={{ display: 'inline-flex', alignItems: 'center' }}><Loader2 size={16} /></span>}
               </div>
             ))}
             <div ref={messagesEndRef} />
@@ -119,7 +123,7 @@ export default function MediBot() {
               placeholder="Ask MediBot..."
               disabled={loading}
             />
-            <button className="btn btn-primary btn-sm" onClick={() => send()} disabled={loading || !input.trim()}>Send</button>
+            <button className="btn btn-primary btn-sm" onClick={() => send()} disabled={loading || !input.trim()}><Send size={16} /></button>
           </div>
         </div>
       )}

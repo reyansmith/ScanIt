@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
+import { Camera, HeartPulse, Bot, BarChart, MessageSquare, Lock, Activity, User, CheckCircle } from 'lucide-react';
 
-const features = [
-  { icon: '📷', title: 'Instant Barcode Scan', desc: 'Point your camera at any product barcode for real-time nutritional analysis.' },
-  { icon: '🏥', title: 'MediVerdict™', desc: 'Color-coded safety verdict tailored to your exact health conditions — not generic advice.' },
-  { icon: '🤖', title: 'MediBot AI', desc: 'Ask our AI assistant anything about a product. It knows your profile and the product context.' },
-  { icon: '📊', title: 'Progress Tracker', desc: 'Weekly summaries of your sodium, sugar, and calorie intake from scanned products.' },
-  { icon: '💬', title: 'Community Hub', desc: 'Share recipes, discuss symptoms, and upvote health-friendly products with others.' },
-  { icon: '🔒', title: 'Private & Secure', desc: 'Your health data is encrypted. We never sell your information.' },
+const FEATURES = [
+  { icon: <Camera />, title: 'Instant Barcode Scan', desc: 'Point your camera at any product barcode for real-time nutritional analysis.' },
+  { icon: <HeartPulse />, title: 'MediVerdict™', desc: 'Color-coded safety verdict tailored to your exact health conditions — not generic advice.' },
+  { icon: <Bot />, title: 'MediBot AI', desc: 'Ask our AI assistant anything about a product. It knows your profile and the product context.' },
+  { icon: <BarChart />, title: 'Progress Tracker', desc: 'Weekly summaries of your sodium, sugar, and calorie intake from scanned products.' },
+  { icon: <MessageSquare />, title: 'Community Hub', desc: 'Share recipes, discuss symptoms, and upvote health-friendly products with others.' },
+  { icon: <Lock />, title: 'Private & Secure', desc: 'Your health data is encrypted. We never sell your information.' },
 ];
 
 const conditions = ['Type 1 & 2 Diabetes', 'Hypertension', 'High Cholesterol', 'Celiac Disease', 'Nut & Dairy Allergy', 'CKD', 'IBS/FODMAP'];
@@ -17,10 +18,10 @@ export default function Landing() {
       {/* Hero */}
       <section className="hero">
         <div className="container">
-          <div className="hero-content">
-            <div className="hero-eyebrow">🩺 Clinical-Grade Health Intelligence</div>
+          <div className="hero-content fade-in">
+            <div className="hero-eyebrow"><Activity size={16} /> Clinical-Grade Health Intelligence</div>
             <h1 className="hero-title">
-              Know If Any Product<br /><span>Is Safe For You.</span>
+              Your pocket <span>nutritionist</span> for chronic health conditions.
             </h1>
             <p className="hero-sub">
               Scan a barcode. Get an instant, personalized safety verdict based on your health conditions — not generic nutrition labels.
@@ -43,19 +44,15 @@ export default function Landing() {
       {/* How it works */}
       <section style={{ padding: '5rem 0', background: 'var(--white)' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h2>How MediScan Works</h2>
-            <p style={{ color: 'var(--text-muted)', marginTop: '.5rem' }}>Three steps to smarter shopping</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
+          <h2 style={{ fontSize: '2rem', marginBottom: '2rem', textAlign: 'center' }}>How it works</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
             {[
-              { step: '01', icon: '👤', title: 'Build Your Profile', desc: 'Enter your health conditions, biometrics, and dietary goals once.' },
-              { step: '02', icon: '📷', title: 'Scan Any Product', desc: 'Use your phone camera to scan any barcode in seconds.' },
-              { step: '03', icon: '✅', title: 'Get MediVerdict', desc: 'See an instant Safe, Caution, or Danger verdict personalized to you.' },
-            ].map((s) => (
-              <div key={s.step} style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
-                <div style={{ fontSize: '.75rem', fontWeight: 700, color: 'var(--teal)', letterSpacing: '.1em', marginBottom: '.5rem' }}>STEP {s.step}</div>
-                <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{s.icon}</div>
+              { step: '01', icon: <User />, title: 'Build Your Profile', desc: 'Enter your health conditions, biometrics, and dietary goals once.' },
+              { step: '02', icon: <Camera />, title: 'Scan Any Product', desc: 'Use your phone camera to scan any barcode in seconds.' },
+              { step: '03', icon: <CheckCircle />, title: 'Get MediVerdict', desc: 'See an instant Safe, Caution, or Danger verdict personalized to you.' },
+            ].map((s, i) => (
+              <div key={i} className="card" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>{s.icon}</div>
                 <h3 style={{ marginBottom: '.5rem' }}>{s.title}</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '.9rem' }}>{s.desc}</p>
               </div>
@@ -71,7 +68,7 @@ export default function Landing() {
             <h2>Everything You Need</h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            {features.map((f) => (
+            {FEATURES.map((f) => (
               <div key={f.title} className="card" style={{ transition: 'all 200ms ease' }}
                 onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
                 onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow)'}>
@@ -96,9 +93,11 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer style={{ background: 'var(--slate-dark)', color: '#cbd5e0', padding: '2rem 0', textAlign: 'center', fontSize: '.85rem' }}>
+      <footer style={{ background: '#0f172a', color: '#cbd5e1', padding: '3rem 1.5rem', textAlign: 'center' }}>
         <div className="container">
-          <p>🩺 <strong style={{ color: '#fff' }}>MediScan</strong> — Not a substitute for professional medical advice.</p>
+          <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Activity size={18} color="var(--white)" /> <strong style={{ color: '#fff' }}>MediScan</strong> — Not a substitute for professional medical advice.
+          </p>
         </div>
       </footer>
     </div>

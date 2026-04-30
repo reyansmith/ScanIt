@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Camera, Keyboard, AlertTriangle, Search, Loader2, ShieldAlert, Bot } from 'lucide-react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import MediVerdict from '../components/MediVerdict';
@@ -66,7 +67,7 @@ export default function Scanner() {
 
         {/* Mode tabs */}
         <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1.5rem' }}>
-          {[['camera', '📷 Camera'], ['manual', '⌨️ Manual Entry']].map(([m, label]) => (
+          {[['camera', <><Camera size={16} /> Camera</>], ['manual', <><Keyboard size={16} /> Manual Entry</>]].map(([m, label]) => (
             <button key={m} onClick={() => setMode(m)}
               className={`btn ${mode === m ? 'btn-primary' : 'btn-outline'}`}>
               {label}
@@ -77,7 +78,7 @@ export default function Scanner() {
         {/* Camera view */}
         {mode === 'camera' && (
           <div style={{ marginBottom: '1.5rem' }}>
-            {cameraError && <div className="alert-item caution"><span>⚠️</span><p>{cameraError}</p></div>}
+            {cameraError && <div className="alert-item caution"><span><AlertTriangle size={18} /></span><p>{cameraError}</p></div>}
             <div className="scanner-viewport">
               <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <div className="scanner-overlay">
@@ -102,10 +103,10 @@ export default function Scanner() {
                 onKeyDown={(e) => e.key === 'Enter' && scan()} />
             </div>
             <button className="btn btn-primary" onClick={() => scan()} disabled={loading} style={{ whiteSpace: 'nowrap' }}>
-              {loading ? '⏳ Analyzing...' : '🔍 Scan'}
+              {loading ? <><Loader2 className="spin" size={16} /> Analyzing...</> : <><Search size={16} /> Scan</>}
             </button>
           </div>
-          {error && <div className="alert-item danger" style={{ marginTop: '.75rem' }}><span>🚨</span><p style={{ fontSize: '.88rem' }}>{error}</p></div>}
+          {error && <div className="alert-item danger" style={{ marginTop: '.75rem' }}><span><ShieldAlert size={18} /></span><p style={{ fontSize: '.88rem' }}>{error}</p></div>}
         </div>
 
         {/* Results */}
@@ -116,19 +117,19 @@ export default function Scanner() {
 
             {result.alert_summaries?.length > 0 && (
               <div className="card" style={{ marginTop: '1rem' }}>
-                <h3 style={{ marginBottom: '.75rem' }}>🔔 Alert Details</h3>
+                <h3 style={{ marginBottom: '.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Bell size={18} /> Alert Details</h3>
                 {result.alert_summaries.map((a, i) => (
                   <div key={i} className={`alert-item ${result.verdict === 'DANGER' ? 'danger' : 'caution'}`}>
-                    <span>{result.verdict === 'DANGER' ? '🚨' : '⚠️'}</span>
+                    <span>{result.verdict === 'DANGER' ? <ShieldAlert size={18} /> : <AlertTriangle size={18} />}</span>
                     <p style={{ fontSize: '.85rem' }}>{a}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--teal-bg)', borderRadius: 10, border: '1px solid rgba(0,128,128,.2)' }}>
-              <p style={{ fontSize: '.85rem', color: 'var(--teal)', fontWeight: 600 }}>
-                🤖 Have questions about this product? Ask MediBot in the bottom-right corner!
+            <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--teal-bg)', borderRadius: 10, border: '1px solid rgba(17,24,39,.1)' }}>
+              <p style={{ fontSize: '.85rem', color: 'var(--text)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Bot size={18} /> Have questions about this product? Ask MediBot in the bottom-right corner!
               </p>
             </div>
           </div>

@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { CheckCircle, AlertTriangle, ShieldAlert, Camera, Bell, TrendingUp, Clock, ShoppingBag, Loader2 } from 'lucide-react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 
-const VERDICT_ICON = { SAFE: '✅', CAUTION: '⚠️', DANGER: '🚨' };
+const VERDICT_ICON = { 
+  SAFE: <CheckCircle size={16} strokeWidth={2.5} />, 
+  CAUTION: <AlertTriangle size={16} strokeWidth={2.5} />, 
+  DANGER: <ShieldAlert size={16} strokeWidth={2.5} /> 
+};
 
 // Mock weekly chart data — replace with real API data
 const mockWeekly = [
@@ -32,8 +37,9 @@ export default function Dashboard() {
 
   if (loading) return (
     <div className="page"><Navbar />
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <p style={{ color: 'var(--text-muted)' }}>⏳ Loading your dashboard…</p>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', gap: '0.5rem' }}>
+        <Loader2 className="spin" size={20} color="var(--text-muted)" />
+        <p style={{ color: 'var(--text-muted)' }}>Loading your dashboard…</p>
       </div>
     </div>
   );
@@ -49,7 +55,9 @@ export default function Dashboard() {
             <h1 style={{ fontSize: '1.8rem' }}>Health Dashboard</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '.9rem' }}>Your personal nutrition intelligence hub</p>
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('/scanner')}>📷 Scan Product</button>
+          <button className="btn btn-primary" onClick={() => navigate('/scanner')}>
+            <Camera size={18} /> Scan Product
+          </button>
         </div>
 
         {/* Stats */}
@@ -71,9 +79,11 @@ export default function Dashboard() {
 
           {/* Alerts Panel */}
           <div className="card">
-            <h3 style={{ marginBottom: '1rem' }}>🔔 Recent Alerts</h3>
+            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Bell size={18} /> Recent Alerts
+            </h3>
             {summary?.alerts?.length === 0 && (
-              <div className="alert-item safe"><span>✅</span><p style={{ fontSize: '.88rem' }}>No alerts — all recent products are safe!</p></div>
+              <div className="alert-item safe"><span><CheckCircle size={18} /></span><p style={{ fontSize: '.88rem' }}>No alerts — all recent products are safe!</p></div>
             )}
             {summary?.alerts?.map((a, i) => (
               <div key={i} className={`alert-item ${a.verdict === 'DANGER' ? 'danger' : 'caution'}`}>
@@ -88,7 +98,9 @@ export default function Dashboard() {
 
           {/* Progress Tracker */}
           <div className="card">
-            <h3 style={{ marginBottom: '.5rem' }}>📈 Weekly Progress</h3>
+            <h3 style={{ marginBottom: '.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <TrendingUp size={18} /> Weekly Progress
+            </h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '.82rem', marginBottom: '1rem' }}>Avg intake from scanned products (last 7 days)</p>
             <ResponsiveContainer width="100%" height={160}>
               <AreaChart data={mockWeekly}>
@@ -122,20 +134,24 @@ export default function Dashboard() {
         {/* Recent Scans */}
         <div className="card" style={{ marginTop: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3>🕒 Recent Scans</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Clock size={18} /> Recent Scans
+            </h3>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/scanner')}>Scan new +</button>
           </div>
           {summary?.recent_scans?.length === 0 && (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-              <p style={{ fontSize: '2rem' }}>📷</p>
-              <p>No scans yet. <button className="btn btn-primary btn-sm" onClick={() => navigate('/scanner')}>Start scanning!</button></p>
+              <p style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                <Camera size={32} color="var(--slate)" />
+              </p>
+              <p>No scans yet. <button className="btn btn-primary btn-sm" onClick={() => navigate('/scanner')} style={{ marginLeft: '0.5rem' }}>Start scanning!</button></p>
             </div>
           )}
           <div style={{ display: 'grid', gap: '.75rem' }}>
             {summary?.recent_scans?.map((s) => (
               <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '.75rem', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)' }}>
                 {s.image_url && <img src={s.image_url} alt="" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 6 }} />}
-                {!s.image_url && <div style={{ width: 44, height: 44, background: 'var(--slate-light)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>🛒</div>}
+                {!s.image_url && <div style={{ width: 44, height: 44, background: 'var(--slate-light)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--slate)' }}><ShoppingBag size={20} /></div>}
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 600, fontSize: '.9rem' }}>{s.product_name}</p>
                   <p style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>{s.brand} · {new Date(s.scanned_at).toLocaleDateString()}</p>

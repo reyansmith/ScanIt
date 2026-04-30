@@ -1,4 +1,10 @@
-const ICONS = { SAFE: '✅', CAUTION: '⚠️', DANGER: '🚨' };
+import { CheckCircle, AlertTriangle, ShieldAlert } from 'lucide-react';
+
+const ICONS = { 
+  SAFE: <CheckCircle size={18} strokeWidth={2.5} />, 
+  CAUTION: <AlertTriangle size={18} strokeWidth={2.5} />, 
+  DANGER: <ShieldAlert size={18} strokeWidth={2.5} /> 
+};
 const LABELS = { SAFE: 'Safe for You', CAUTION: 'Use Caution', DANGER: 'Not Recommended' };
 
 export default function MediVerdict({ verdict, flags = [] }) {
@@ -17,7 +23,9 @@ export default function MediVerdict({ verdict, flags = [] }) {
           </p>
           {flags.map((f, i) => (
             <div key={i} className={`alert-item ${verdict === 'DANGER' ? 'danger' : 'caution'}`}>
-              <span style={{ fontSize: '1rem' }}>{verdict === 'DANGER' ? '🚨' : '⚠️'}</span>
+              <span style={{ fontSize: '1rem', display: 'flex', alignItems: 'center' }}>
+                {verdict === 'DANGER' ? <ShieldAlert size={20} /> : <AlertTriangle size={20} />}
+              </span>
               <div>
                 <p style={{ fontWeight: 600, fontSize: '.88rem', marginBottom: '.1rem' }}>{f.reason}</p>
                 <p style={{ fontSize: '.8rem', opacity: .8 }}>

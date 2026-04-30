@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Lightbulb, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 
@@ -116,18 +117,18 @@ export default function ProfileSetup() {
 
             {form.health_conditions.length === 0 && (
               <div className="alert-item caution" style={{ marginBottom: '1rem' }}>
-                <span>💡</span>
+                <span><Lightbulb size={18} /></span>
                 <p style={{ fontSize: '.85rem' }}>Select at least one condition for personalized verdicts. You can update this anytime.</p>
               </div>
             )}
 
-            {error && <div className="alert-item danger" style={{ marginBottom: '1rem' }}><span>⚠️</span><p>{error}</p></div>}
-            {saved && <div className="alert-item safe" style={{ marginBottom: '1rem' }}><span>✅</span><p style={{ fontWeight: 600 }}>Profile saved! Redirecting…</p></div>}
+            {error && <div className="alert-item danger" style={{ marginBottom: '1rem' }}><span><AlertTriangle size={18} /></span><p>{error}</p></div>}
+            {saved && <div className="alert-item safe" style={{ marginBottom: '1rem' }}><span><CheckCircle size={18} /></span><p style={{ fontWeight: 600 }}>Profile saved! Redirecting…</p></div>}
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between' }}>
               <button className="btn btn-ghost" onClick={() => setStep(1)}>← Back</button>
               <button className="btn btn-primary" onClick={submit} disabled={loading || saved}>
-                {loading ? '⏳ Saving...' : 'Save Profile & Continue →'}
+                {loading ? <><Loader2 className="spin" size={16} /> Saving...</> : 'Save Profile & Continue →'}
               </button>
             </div>
           </div>

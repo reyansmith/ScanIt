@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Activity, AlertTriangle, Loader2 } from 'lucide-react';
 import api from '../api/client';
 import useStore from '../store/useStore';
 
@@ -31,12 +32,12 @@ export default function Register() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f8fafb 0%, #e6f5f5 100%)', padding: '2rem' }}>
       <div className="card fade-in" style={{ width: '100%', maxWidth: 440 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>🩺</div>
-          <h2>Create Your Account</h2>
+          <div style={{ marginBottom: '.5rem', display: 'flex', justifyContent: 'center' }}><Activity size={32} color="var(--text)" /></div>
+          <h2>Join MediScan</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '.9rem', marginTop: '.3rem' }}>Free forever. No credit card needed.</p>
         </div>
 
-        {error && <div className="alert-item danger" style={{ marginBottom: '1rem' }}><span>⚠️</span><p style={{ fontSize: '.88rem' }}>{error}</p></div>}
+        {error && <div className="alert-item danger" style={{ marginBottom: '1rem', textAlign: 'left' }}><span><AlertTriangle size={18} /></span><p style={{ fontSize: '.88rem' }}>{error}</p></div>}
 
         <form onSubmit={submit}>
           <div className="form-group">
@@ -60,7 +61,7 @@ export default function Register() {
               value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} required />
           </div>
           <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: '.5rem' }} disabled={loading}>
-            {loading ? '⏳ Creating account...' : 'Create Account →'}
+            {loading ? <><Loader2 className="spin" size={16} /> Creating account...</> : 'Create Account →'}
           </button>
         </form>
 
