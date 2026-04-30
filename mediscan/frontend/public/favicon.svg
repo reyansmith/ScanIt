@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="64" y2="64">
+      <stop offset="0%" stop-color="#3B82F6"/> <!-- Bolder Blue -->
+      <stop offset="100%" stop-color="#1D4ED8"/> <!-- Deep Blue -->
+    </linearGradient>
+  </defs>
+  <!-- Stronger glowing background circle -->
+  <circle cx="32" cy="32" r="28" fill="url(#grad)" fill-opacity="0.25" />
+  <circle cx="32" cy="32" r="28" stroke="url(#grad)" stroke-width="4" stroke-opacity="1.0" />
+  
+  <!-- Medical Cross with solid, bright fill so it stands out -->
+  <path d="M40 28H36V24C36 21.791 34.209 20 32 20C29.791 20 28 21.791 28 24V28H24C21.791 28 20 29.791 20 32C20 34.209 21.791 36 24 36H28V40C28 42.209 29.791 44 32 44C34.209 44 36 42.209 36 40V36H40C42.209 36 44 34.209 44 32C44 29.791 42.209 28 40 28Z" fill="url(#grad)"/>
+</svg>
