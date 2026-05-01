@@ -79,8 +79,13 @@ async def stream_medibot_response(
     Yields SSE-formatted token chunks for streaming to the frontend.
     """
     llm = ChatOpenAI(
-        model=settings.OPENAI_MODEL,
-        api_key=settings.OPENAI_API_KEY,
+        model=settings.OPENROUTER_MODEL,
+        api_key=settings.OPENROUTER_API_KEY,
+        base_url="https://openrouter.ai/api/v1",
+        default_headers={
+            "HTTP-Referer": "http://localhost:5173", # Update in prod
+            "X-Title": "MediScan",
+        },
         streaming=True,
         temperature=0.4,
     )

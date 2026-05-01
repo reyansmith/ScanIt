@@ -9,9 +9,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Optional: OpenAI key for MediBot (bot is disabled if not provided)
-    OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-4o-mini"
+    # Optional: OpenRouter key for MediBot (bot is disabled if not provided)
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = "openai/gpt-4o-mini"
 
     # Optional: Nutritionix fallback (OpenFoodFacts works without a key)
     NUTRITIONIX_APP_ID: str = ""
