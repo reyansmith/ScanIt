@@ -5,36 +5,39 @@ Community API — /api/community/*
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 from app.database import get_db
 from app.models.user import User
 from app.models.community import CommunityPost
 from app.api.auth import get_current_user
+from app.security import InMemoryRateLimiter, validate_barcode
 
 router = APIRouter(prefix="/api/community", tags=["community"])
+community_write_limiter = InMemoryRateLimiter(limit=20, window_seconds=60)
+vote_limiter = InMemoryRateLimiter(limit=60, window_seconds=60)
 
 VALID_CATEGORIES = ["general", "recipe", "symptom"]
 
 
 class PostCreate(BaseModel):
     category: str = "general"
-    title: str
-    body: str
-    tags: Optional[List[str]] = []
-    product_barcode: Optional[str] = None
+    title: str = Field(min_length=5, max_length=160)
+    body: str = Field(min_length=1, max_length=5000)
+    tags: Optional[List[str]] = Field(default_factory=list, max_length=10)
+    product_barcode: Optional[str] = Field(default=None, max_length=50)
 
 
 class VoteRequest(BaseModel):
-    direction: str  # "up" | "down"
+    direction: str = Field(pattern="^(up|down)$")
 
 
 @router.get("/posts")
 async def list_posts(
     category: Optional[str] = Query(None),
-    page: int = 1,
-    per_page: int = 15,
+    page: int = Query(1, ge=1, le=1000),
+    per_page: int = Query(15, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -67,6 +70,7 @@ async def list_posts(
 @router.post("/posts", status_code=201)
 async def create_post(
     body: PostCreate,
+    _: None = Depends(community_write_limiter),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -74,15 +78,18 @@ async def create_post(
         raise HTTPException(status_code=422, detail=f"category must be one of {VALID_CATEGORIES}")
     if len(body.title) < 5:
         raise HTTPException(status_code=422, detail="Title too short")
+    tags = [(tag or "").strip()[:40] for tag in (body.tags or [])]
+    tags = [tag for tag in tags if tag][:10]
+    product_barcode = validate_barcode(body.product_barcode) if body.product_barcode else None
 
     post = CommunityPost(
         user_id=current_user.id,
         author_name=current_user.full_name or current_user.email.split("@")[0],
         category=body.category,
-        title=body.title,
-        body=body.body,
-        tags=body.tags,
-        product_barcode=body.product_barcode,
+        title=body.title.strip(),
+        body=body.body.strip(),
+        tags=tags,
+        product_barcode=product_barcode,
     )
     db.add(post)
     await db.flush()
@@ -93,6 +100,7 @@ async def create_post(
 async def vote_post(
     post_id: str,
     body: VoteRequest,
+    _: None = Depends(vote_limiter),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

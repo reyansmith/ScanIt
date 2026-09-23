@@ -3,33 +3,58 @@ Auth API router — /api/auth/*
 """
 
 from datetime import datetime, timedelta, timezone
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from passlib.context import CryptContext
 from jose import jwt, JWTError
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from app.database import get_db
 from app.models.user import User
 from app.models.profile import UserProfile
 from app.config import settings
+from app.security import InMemoryRateLimiter
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-pwd_ctx = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
+pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+auth_limiter = InMemoryRateLimiter(limit=10, window_seconds=60)
+refresh_limiter = InMemoryRateLimiter(limit=30, window_seconds=60)
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
 
 class RegisterRequest(BaseModel):
-    email: str
-    password: str
-    full_name: str | None = None
+    email: str = Field(min_length=3, max_length=255)
+    password: str = Field(min_length=8, max_length=128)
+    full_name: str | None = Field(default=None, max_length=120)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        email = value.strip().lower()
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+            raise ValueError("Invalid email address")
+        return email
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        if value.strip() != value:
+            raise ValueError("Password must not start or end with whitespace")
+        if value.lower() in {"password", "password123", "12345678", "mediscan123"}:
+            raise ValueError("Password is too common")
+        return value
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    email: str = Field(min_length=3, max_length=255)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -37,7 +62,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(min_length=20, max_length=4096)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -92,7 +117,7 @@ async def get_current_user(
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
+@router.post("/register", response_model=TokenResponse, status_code=201, dependencies=[Depends(auth_limiter)])
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
@@ -116,7 +141,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, dependencies=[Depends(auth_limiter)])
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -128,7 +153,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=TokenResponse, dependencies=[Depends(refresh_limiter)])
 async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     try:
         payload = jwt.decode(body.refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -136,6 +161,10 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
         if not user_id or payload.get("type") != "refresh":
             raise HTTPException(status_code=401, detail="Invalid refresh token")
     except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     return TokenResponse(
         access_token=create_access_token(user_id),

@@ -10,6 +10,20 @@ const SUGGESTIONS = [
   'Is this safe for high blood pressure?',
 ];
 
+function renderFormattedText(text) {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
 export default function MediBot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -44,7 +58,12 @@ export default function MediBot() {
         },
         body: JSON.stringify({
           message: msg,
-          product_context: currentScan?.product || {},
+          product_context: currentScan ? {
+            ...(currentScan.product || {}),
+            verdict: currentScan.verdict,
+            flags: currentScan.flags || [],
+            alert_summaries: currentScan.alert_summaries || [],
+          } : {},
           chat_history: history,
         }),
       });
@@ -59,8 +78,17 @@ export default function MediBot() {
         const chunk = decoder.decode(value);
         const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
         for (const line of lines) {
-          const token = line.replace('data: ', '');
-          if (token === '[DONE]') break;
+          const raw = line.slice(6);
+          if (raw === '[DONE]') break;
+          let token = raw;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed.token === 'string') {
+              token = parsed.token;
+            }
+          } catch {
+            token = raw;
+          }
           accumulated += token;
           setMessages((prev) => {
             const updated = [...prev];
@@ -101,7 +129,7 @@ export default function MediBot() {
           <div className="medibot-messages">
             {messages.map((m, i) => (
               <div key={i} className={`chat-msg ${m.role}`}>
-                {m.content || <span className="spin" style={{ display: 'inline-flex', alignItems: 'center' }}><Loader2 size={16} /></span>}
+                {renderFormattedText(m.content) || <span className="spin" style={{ display: 'inline-flex', alignItems: 'center' }}><Loader2 size={16} /></span>}
               </div>
             ))}
             <div ref={messagesEndRef} />

@@ -2,7 +2,8 @@
 
 Scan any product barcode and instantly get a personalized **Safe / Caution / Danger** verdict based on your health conditions.
 
-**Stack:** FastAPI (Python) · React (Vite) · SQLite (zero setup)
+**Stack:** FastAPI (Python) · React (Vite) · SQLite (zero setup)  
+📖 **Full Technical Specs & Architecture:** [DOCUMENTATION.md](DOCUMENTATION.md)
 
 ---
 

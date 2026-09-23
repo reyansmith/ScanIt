@@ -6,13 +6,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.config import settings
+from app.config import settings, validate_runtime_settings
 from app.database import engine, Base
 from app.api import auth, profile, scanner, dashboard, bot, community
+from app.security import SecurityHeadersMiddleware
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_runtime_settings()
     # Create all tables on startup (use Alembic migrations in production)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -32,9 +34,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Routers
 app.include_router(auth.router)

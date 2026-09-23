@@ -2,11 +2,10 @@
 Scanner API — /api/scan-product, /api/scans/history
 """
 
-import uuid
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.database import get_db
 from app.models.scan import Scan
@@ -15,21 +14,24 @@ from app.models.user import User
 from app.services.barcode_service import lookup_product
 from app.services.verdict_engine import compute_verdict, build_alert_summary
 from app.api.auth import get_current_user
+from app.security import InMemoryRateLimiter, validate_barcode
 
 router = APIRouter(prefix="/api", tags=["scanner"])
+scan_limiter = InMemoryRateLimiter(limit=30, window_seconds=60)
 
 
 class ScanRequest(BaseModel):
-    barcode: str
+    barcode: str = Field(min_length=3, max_length=50)
 
 
 @router.post("/scan-product")
 async def scan_product(
     body: ScanRequest,
+    _: None = Depends(scan_limiter),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    barcode = body.barcode.strip()
+    barcode = validate_barcode(body.barcode)
 
     # 1. Lookup product
     product = await lookup_product(barcode)
@@ -71,10 +73,12 @@ async def scan_product(
 @router.get("/scan-product/{barcode}")
 async def get_product_by_barcode(
     barcode: str,
+    _: None = Depends(scan_limiter),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Cached product lookup (no new scan record)."""
+    barcode = validate_barcode(barcode)
     product = await lookup_product(barcode)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -83,8 +87,8 @@ async def get_product_by_barcode(
 
 @router.get("/scans/history")
 async def get_scan_history(
-    page: int = 1,
-    per_page: int = 20,
+    page: int = Query(1, ge=1, le=1000),
+    per_page: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Keyboard, AlertTriangle, Search, Loader2, ShieldAlert, Bot } from 'lucide-react';
+import { Bell, Camera, Keyboard, AlertTriangle, Search, Loader2, ShieldAlert, Bot, FlipHorizontal, RefreshCw } from 'lucide-react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import MediVerdict from '../components/MediVerdict';
@@ -14,22 +14,11 @@ export default function Scanner() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [cameraError, setCameraError] = useState('');
+  const [mirrored, setMirrored] = useState(false);
+  const [facingMode, setFacingMode] = useState('environment'); // 'environment' | 'user'
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const setCurrentScan = useStore((s) => s.setCurrentScan);
-
-  // Start camera
-  const startCamera = useCallback(async () => {
-    try {
-      setCameraError('');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch {
-      setCameraError('Camera access denied. Please use manual entry below.');
-      setMode('manual');
-    }
-  }, []);
 
   // Stop camera
   const stopCamera = useCallback(() => {
@@ -37,11 +26,29 @@ export default function Scanner() {
     streamRef.current = null;
   }, []);
 
+  // Start camera
+  const startCamera = useCallback(async () => {
+    stopCamera();
+    try {
+      setCameraError('');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch {
+      setCameraError('Camera access denied or unavailable. Please use manual entry below.');
+      setMode('manual');
+    }
+  }, [facingMode, stopCamera]);
+
   useEffect(() => {
     if (mode === 'camera') startCamera();
     else stopCamera();
     return stopCamera;
-  }, [mode]);
+  }, [mode, startCamera, stopCamera]);
+
+  const toggleFacingMode = () => {
+    setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
+  };
 
   const scan = async (code) => {
     const bc = (code || barcode).trim();
@@ -80,14 +87,37 @@ export default function Scanner() {
           <div style={{ marginBottom: '1.5rem' }}>
             {cameraError && <div className="alert-item caution"><span><AlertTriangle size={18} /></span><p>{cameraError}</p></div>}
             <div className="scanner-viewport">
-              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  transform: mirrored ? 'scaleX(-1)' : 'none',
+                  transition: 'transform 0.2s ease',
+                }}
+              />
               <div className="scanner-overlay">
                 <div className="scan-frame"><div className="scan-line" /></div>
               </div>
             </div>
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '.82rem', marginTop: '.75rem' }}>
-              Hold barcode steady inside the frame. Auto-detection requires ZXing integration.
-            </p>
+
+            {/* Camera Controls */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+              <button
+                className={`btn ${mirrored ? 'btn-primary' : 'btn-outline'} btn-sm`}
+                onClick={() => setMirrored(!mirrored)}
+              >
+                <FlipHorizontal size={14} /> {mirrored ? 'Unmirror Feed' : 'Mirror Feed'}
+              </button>
+
+              <button className="btn btn-outline btn-sm" onClick={toggleFacingMode}>
+                <RefreshCw size={14} /> Switch Camera ({facingMode === 'environment' ? 'Back' : 'Front'})
+              </button>
+            </div>
           </div>
         )}
 

@@ -5,7 +5,7 @@ Profile API — /api/profile/*
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 from app.database import get_db
@@ -31,12 +31,12 @@ VALID_ACTIVITY_LEVELS = ["sedentary", "light", "moderate", "active"]
 
 
 class ProfileUpdate(BaseModel):
-    height_cm: Optional[float] = None
-    weight_kg: Optional[float] = None
-    age: Optional[int] = None
-    activity_level: Optional[str] = None
-    health_conditions: Optional[List[str]] = None
-    dietary_goals: Optional[dict] = None
+    height_cm: Optional[float] = Field(default=None, ge=30, le=300)
+    weight_kg: Optional[float] = Field(default=None, ge=1, le=700)
+    age: Optional[int] = Field(default=None, ge=1, le=130)
+    activity_level: Optional[str] = Field(default=None, max_length=30)
+    health_conditions: Optional[List[str]] = Field(default=None, max_length=20)
+    dietary_goals: Optional[dict] = Field(default=None)
 
 
 @router.get("")
