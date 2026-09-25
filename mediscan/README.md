@@ -1,130 +1,135 @@
-# 🩺 MediScan — Personal Health Scanner
+# MediScan
 
-Scan any product barcode and instantly get a personalized **Safe / Caution / Danger** verdict based on your health conditions.
+A personalized health scanner that helps people evaluate packaged products based on their dietary needs and medical profile.
 
-**Stack:** FastAPI (Python) · React (Vite) · SQLite (zero setup)  
-📖 **Full Technical Specs & Architecture:** [DOCUMENTATION.md](DOCUMENTATION.md)
+## Why this app exists
 
----
+MediScan makes it easier to answer a simple but important question:
 
-## ⚡ Quick Start
+> "Is this product suitable for my health conditions?"
 
-### Prerequisites
-| Tool | Version | Download |
-|------|---------|----------|
-| Python | 3.10+ | https://python.org |
-| Node.js | 18+ | https://nodejs.org |
-| Git | any | https://git-scm.com |
+By scanning a product barcode, users can review ingredient details, assess risk levels, and receive a clearer recommendation tailored to their profile.
 
----
+## Features
 
-### 1. Clone the repo
+- Personalized health verdicts: Safe, Caution, or Danger
+- Barcode and manual product lookup
+- Health-aware recommendations based on user conditions
+- Dashboard for progress and alerts
+- Community-based discussion and shared insights
+- MediBot assistant for product-related questions
 
-```bash
-git clone https://github.com/reyansmith/scanit.git
-cd scanit/mediscan
+## Tech Stack
+
+- Python + FastAPI
+- React + Vite
+- SQLite for local data storage
+- Docker-ready setup
+
+## Project Structure
+
+```text
+mediscan/
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── models/
+│   │   ├── services/
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── main.py
+│   │   └── security.py
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+├── docker-compose.yml
+├── DOCUMENTATION.md
+├── README.md
+├── run_servers.bat
+├── stop_servers.bat
+└── .gitignore
 ```
 
----
+## Getting Started
 
-### 2. Backend Setup
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+
+- Git
+
+### 1. Install backend dependencies
 
 ```bash
 cd backend
+pip install -r requirements.txt
+```
 
-# Install Python dependencies
-pip install fastapi "uvicorn[standard]" sqlalchemy[asyncio] aiosqlite \
-    pydantic pydantic-settings "python-jose[cryptography]" \
-    "passlib[bcrypt]" python-multipart python-dotenv aiohttp httpx
+### 2. Start the backend
 
-# Start the backend (SQLite DB is created automatically)
+```bash
+cd backend
 python -m uvicorn app.main:app --reload
 ```
 
-Backend runs at → **http://localhost:8000**  
-Auto docs at → **http://localhost:8000/docs**
+The API will run at:
 
-> **No database setup needed.** A `mediscan.db` SQLite file is created automatically on first run.
+- http://localhost:8000
+- API docs: http://localhost:8000/docs
 
----
+### 3. Start the frontend
 
-### 3. Frontend Setup
-
-Open a **new terminal**:
+Open a new terminal and run:
 
 ```bash
 cd frontend
-
-# Install Node dependencies
 npm install
-
-# Start the dev server
 npm run dev
 ```
 
-Frontend runs at → **http://localhost:5173**
+The UI will run at:
 
----
+- http://localhost:5173
 
-### 4. (Optional) Enable MediBot AI
-
-Create a `.env` file inside the `backend/` folder:
-
-```env
-OPENAI_API_KEY=sk-your-key-here
-```
-
-MediBot will work without this — it just returns a helpful fallback message instead of live AI responses.
-
----
-
-## 🗂️ Project Structure
-
-```
-mediscan/
-├── backend/          # FastAPI Python API
-│   ├── app/
-│   │   ├── api/      # Route handlers
-│   │   ├── models/   # SQLAlchemy DB models
-│   │   └── services/ # Barcode lookup, Verdict engine, MediBot
-│   └── requirements.txt
-├── frontend/         # React + Vite UI
-│   └── src/
-│       ├── pages/    # Landing, Dashboard, Scanner, Community
-│       └── components/
-└── docker-compose.yml
-```
-
----
-
-## 🔑 Key Features
-
-- **MediVerdict™** — Safe / Caution / Danger badge for 9 health conditions
-- **Barcode Scanner** — Camera scan or manual entry, powered by OpenFoodFacts (free, no API key)
-- **MediBot** — AI chat assistant that knows your health profile and the scanned product
-- **Dashboard** — Alerts panel + weekly nutrition progress tracker
-- **Community Hub** — Posts, recipes, symptom tracking, product voting
-
----
-
-## 🏥 Supported Health Conditions
-
-Type 1 & 2 Diabetes · Hypertension · High Cholesterol · Celiac Disease · Nut Allergy · Dairy Allergy · Chronic Kidney Disease (CKD) · IBS/FODMAP Sensitivity
-
----
-
-## 🐳 Run with Docker (alternative)
+### 4. Optional: use the Windows quick launch
 
 ```bash
-# From the mediscan/ folder
+cd mediscan
+run_servers.bat
+```
+
+## Optional AI Setup
+
+Create a `.env` file in the backend folder:
+
+```env
+OPENAI_API_KEY=your-api-key-here
+```
+
+If no key is configured, the bot still works with a fallback response.
+
+## Supported Health Conditions
+
+- Type 1 Diabetes
+- Type 2 Diabetes
+- Hypertension
+- High Cholesterol
+- Celiac Disease
+- Nut Allergy
+- Dairy Allergy
+- CKD
+- IBS / FODMAP sensitivity
+
+## Run with Docker
+
+```bash
 docker-compose up
 ```
 
-This starts PostgreSQL + Redis + Backend + Frontend together.
+## Important Note
 
----
-
-## ⚠️ Notes
-
-- This app is **not a substitute for medical advice**.
-- The `.env` file is git-ignored — never commit your API keys.
+This project supports healthier decision-making and education, but it is not a substitute for certified medical advice.
