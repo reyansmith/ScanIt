@@ -1,139 +1,43 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lightbulb, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
-import api from '../api/client';
-import Navbar from '../components/Navbar';
+import { useState } from 'react';
+import { Activity, AlertCircle, CalendarClock, Check, ChevronRight, HeartPulse, Leaf, Plus, ShieldCheck, Target, Utensils } from 'lucide-react';
+import PageShell from '../components/PageShell';
 
-const CONDITIONS = [
-  'Type 1 Diabetes', 'Type 2 Diabetes',
-  'Hypertension (High Blood Pressure)', 'Hypercholesterolemia (High Cholesterol)',
-  'Chronic Kidney Disease (CKD)', 'Celiac Disease',
-  'Nut Allergy (General)', 'Dairy Allergy', 'IBS/FODMAP Sensitivity',
-];
-
-const ACTIVITY_LEVELS = [
-  { value: 'sedentary', label: 'Sedentary (little/no exercise)' },
-  { value: 'light', label: 'Light (1–3 days/week)' },
-  { value: 'moderate', label: 'Moderate (3–5 days/week)' },
-  { value: 'active', label: 'Active (6–7 days/week)' },
+const sections = [
+  { key: 'conditions', title: 'Health conditions', subtitle: 'Used to personalize product explanations', icon: HeartPulse, items: ['High blood pressure', 'High cholesterol'] },
+  { key: 'allergies', title: 'Allergies', subtitle: 'Ingredients ScanIt should always check', icon: ShieldCheck, items: ['Tree nuts', 'Shellfish'] },
+  { key: 'preferences', title: 'Dietary preferences', subtitle: 'How you prefer to eat', icon: Utensils, items: ['Vegetarian', 'Lower sugar'] },
+  { key: 'goals', title: 'Nutritional goals', subtitle: 'What you are currently working toward', icon: Target, items: ['Reduce sodium', 'Increase fiber', 'Increase protein'] },
 ];
 
 export default function ProfileSetup() {
-  const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
-  const [form, setForm] = useState({
-    height_cm: '', weight_kg: '', age: '', activity_level: 'moderate',
-    health_conditions: [],
-  });
-
-  const toggleCondition = (c) => {
-    setForm((prev) => ({
-      ...prev,
-      health_conditions: prev.health_conditions.includes(c)
-        ? prev.health_conditions.filter((x) => x !== c)
-        : [...prev.health_conditions, c],
-    }));
-  };
-
-  const submit = async () => {
-    setError(''); setLoading(true);
-    try {
-      await api.put('/api/profile', {
-        ...form,
-        height_cm: Number(form.height_cm) || null,
-        weight_kg: Number(form.weight_kg) || null,
-        age: Number(form.age) || null,
-      });
-      setSaved(true);
-      setTimeout(() => navigate('/dashboard'), 1200);
-    } catch { setError('Failed to save profile. Please try again.'); }
-    finally { setLoading(false); }
-  };
+  const [editing, setEditing] = useState('');
+  const [profile, setProfile] = useState(Object.fromEntries(sections.map((section) => [section.key, section.items])));
+  const [draft, setDraft] = useState('');
 
   return (
-    <div className="page" style={{ background: 'var(--bg)' }}>
-      <Navbar />
-      <div className="container" style={{ maxWidth: 640, paddingTop: '3rem', paddingBottom: '3rem' }}>
-        {/* Progress */}
-        <div style={{ display: 'flex', gap: '.5rem', marginBottom: '2rem' }}>
-          {[1, 2].map((s) => (
-            <div key={s} style={{ flex: 1, height: 4, borderRadius: 4, background: step >= s ? 'var(--teal)' : 'var(--border)', transition: 'background 300ms ease' }} />
-          ))}
+    <PageShell title="My Health" subtitle="The information ScanIt uses to make every product explanation more relevant." action={(notify) => <button className="button primary" onClick={() => notify('Your health profile is up to date.')}><Check size={18} /> Save changes</button>}>
+      {({ notify }) => <>
+        <section className="health-overview">
+          <div className="profile-completeness surface-panel"><div className="completeness-ring"><strong>92%</strong></div><div><p className="page-eyebrow">Profile completeness</p><h2>Your profile is in great shape</h2><p>Add medication preferences to make product explanations even more relevant.</p></div><button onClick={() => notify('Profile suggestions opened.')}><ChevronRight size={20} /></button></div>
+          <div className="profile-facts surface-panel"><div><CalendarClock size={19} /><span><strong>Last reviewed</strong><small>September 20, 2026</small></span></div><div><Activity size={19} /><span><strong>Used in 48 scans</strong><small>Updated recommendations instantly</small></span></div></div>
+        </section>
+
+        <div className="health-layout">
+          <div className="health-sections">
+            {sections.map(({ key, title, subtitle, icon: Icon }) => <section className="surface-panel health-section" key={key}>
+              <div className="health-section-heading"><span className="metric-icon green"><Icon size={20} /></span><div><h2>{title}</h2><p>{subtitle}</p></div><button className="text-button" onClick={() => setEditing(editing === key ? '' : key)}>{editing === key ? 'Done' : 'Edit'}</button></div>
+              <div className="health-chips">{profile[key].map((item) => <span key={item}>{item}{editing === key && <button aria-label={`Remove ${item}`} onClick={() => setProfile({ ...profile, [key]: profile[key].filter((entry) => entry !== item) })}>×</button>}</span>)}</div>
+              {editing === key && <form className="health-add-form" onSubmit={(event) => { event.preventDefault(); if (!draft.trim()) return; setProfile({ ...profile, [key]: [...profile[key], draft.trim()] }); notify(`${draft.trim()} added to ${title.toLowerCase()}.`); setDraft(''); }}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`Add to ${title.toLowerCase()}…`} aria-label={`Add ${title}`} /><button className="button secondary compact-button" disabled={!draft.trim()}><Plus size={15} /> Add</button></form>}
+            </section>)}
+          </div>
+
+          <aside className="health-side-stack">
+            <section className="surface-panel personalization-card"><span className="metric-icon violet"><Leaf size={20} /></span><h2>How personalization works</h2><p>ScanIt compares product ingredients and nutrition information with the preferences in this profile.</p><ul><li><Check size={14} /> Explains why something was flagged</li><li><Check size={14} /> Finds more suitable alternatives</li><li><Check size={14} /> Tracks patterns over time</li></ul></section>
+            <section className="profile-note"><AlertCircle size={20} /><div><strong>Keep your profile relevant</strong><p>ScanIt recommends reviewing this information regularly. Recommendations are informational and are not medical advice.</p></div></section>
+            <section className="surface-panel data-control"><ShieldCheck size={21} /><div><h3>Your information, your control</h3><p>You can update or remove profile details at any time.</p><button onClick={() => notify('Health data settings opened.')}>Manage data settings</button></div></section>
+          </aside>
         </div>
-
-        {step === 1 && (
-          <div className="card fade-in">
-            <h2 style={{ marginBottom: '.4rem' }}>Your Biometrics</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '.9rem', marginBottom: '1.5rem' }}>
-              Used to personalize your health recommendations.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="ps-height">Height (cm)</label>
-                <input id="ps-height" type="number" className="form-input" placeholder="175"
-                  value={form.height_cm} onChange={(e) => setForm({ ...form, height_cm: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="ps-weight">Weight (kg)</label>
-                <input id="ps-weight" type="number" className="form-input" placeholder="70"
-                  value={form.weight_kg} onChange={(e) => setForm({ ...form, weight_kg: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="ps-age">Age</label>
-                <input id="ps-age" type="number" className="form-input" placeholder="35"
-                  value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="ps-activity">Activity Level</label>
-                <select id="ps-activity" className="form-select"
-                  value={form.activity_level} onChange={(e) => setForm({ ...form, activity_level: e.target.value })}>
-                  {ACTIVITY_LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-                </select>
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button className="btn btn-primary" onClick={() => setStep(2)}>Next: Health Conditions →</button>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="card fade-in">
-            <h2 style={{ marginBottom: '.4rem' }}>Health Conditions</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '.9rem', marginBottom: '1.5rem' }}>
-              Select all that apply. This powers your MediVerdict™ analysis.
-            </p>
-            <div className="conditions-grid" style={{ marginBottom: '1.5rem' }}>
-              {CONDITIONS.map((c) => (
-                <button key={c} className={`condition-chip ${form.health_conditions.includes(c) ? 'selected' : ''}`}
-                  onClick={() => toggleCondition(c)}>
-                  {form.health_conditions.includes(c) ? '✓ ' : ''}{c}
-                </button>
-              ))}
-            </div>
-
-            {form.health_conditions.length === 0 && (
-              <div className="alert-item caution" style={{ marginBottom: '1rem' }}>
-                <span><Lightbulb size={18} /></span>
-                <p style={{ fontSize: '.85rem' }}>Select at least one condition for personalized verdicts. You can update this anytime.</p>
-              </div>
-            )}
-
-            {error && <div className="alert-item danger" style={{ marginBottom: '1rem' }}><span><AlertTriangle size={18} /></span><p>{error}</p></div>}
-            {saved && <div className="alert-item safe" style={{ marginBottom: '1rem' }}><span><CheckCircle size={18} /></span><p style={{ fontWeight: 600 }}>Profile saved! Redirecting…</p></div>}
-
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between' }}>
-              <button className="btn btn-ghost" onClick={() => setStep(1)}>← Back</button>
-              <button className="btn btn-primary" onClick={submit} disabled={loading || saved}>
-                {loading ? <><Loader2 className="spin" size={16} /> Saving...</> : 'Save Profile & Continue →'}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      </>}
+    </PageShell>
   );
 }

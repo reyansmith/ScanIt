@@ -1,150 +1,48 @@
-import { useState, useEffect } from 'react';
-import { Globe, MessageCircle, Utensils, Activity, AlertTriangle, Loader2, Send, ThumbsUp, ThumbsDown } from 'lucide-react';
-import api from '../api/client';
-import Navbar from '../components/Navbar';
+import { useMemo, useState } from 'react';
+import { BookOpen, Heart, MessageCircle, Plus, Search, Send, Star, ThumbsUp, Users, X } from 'lucide-react';
+import PageShell from '../components/PageShell';
+import StatusPill from '../components/StatusPill';
 
-const CATEGORIES = [
-  { key: null, label: <span style={{display:'flex', alignItems:'center', gap:'0.3rem'}}><Globe size={14}/> All Posts</span> },
-  { key: 'general', label: <span style={{display:'flex', alignItems:'center', gap:'0.3rem'}}><MessageCircle size={14}/> General</span> },
-  { key: 'recipe', label: <span style={{display:'flex', alignItems:'center', gap:'0.3rem'}}><Utensils size={14}/> Recipes</span> },
-  { key: 'symptom', label: <span style={{display:'flex', alignItems:'center', gap:'0.3rem'}}><Activity size={14}/> Symptoms</span> },
+const initialPosts = [
+  { id: 1, category: 'Recipes', title: 'My low-sodium overnight oats', body: 'I swapped flavored yogurt for plain Greek yogurt and added berries and cinnamon. It has become my easiest weekday breakfast.', author: 'Maya R.', time: '2h ago', likes: 34, comments: 8, tags: ['lower sodium', 'breakfast'] },
+  { id: 2, category: 'Product Finds', title: 'A cereal that finally works for my morning goals', body: 'Oat & Seed Crunch scored well for my profile and keeps me full longer. Sharing in case anyone else is looking for higher fiber.', author: 'Jordan P.', time: '5h ago', likes: 26, comments: 6, tags: ['cereal', 'high fiber'] },
+  { id: 3, category: 'Discussion', title: 'How do you compare labels without getting overwhelmed?', body: 'I have started checking sodium first, then added sugar. What simple routine works for you?', author: 'Elena S.', time: 'Yesterday', likes: 19, comments: 14, tags: ['label reading'] },
 ];
 
 export default function Community() {
-  const [posts, setPosts] = useState([]);
-  const [category, setCategory] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', body: '', category: 'general' });
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const params = category ? `?category=${category}` : '';
-      const { data } = await api.get(`/api/community/posts${params}`);
-      setPosts(data.posts);
-    } catch { console.error('Failed to load posts'); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(); }, [category]);
-
-  const vote = async (id, dir) => {
-    try {
-      const { data } = await api.post(`/api/community/posts/${id}/vote`, { direction: dir });
-      setPosts((prev) => prev.map((p) => p.id === id ? { ...p, ...data, net_votes: data.upvotes - data.downvotes } : p));
-    } catch { console.error('Vote failed'); }
-  };
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setFormError(''); setSubmitting(true);
-    try {
-      await api.post('/api/community/posts', form);
-      setShowForm(false);
-      setForm({ title: '', body: '', category: 'general' });
-      await load();
-    } catch (err) {
-      setFormError(err.response?.data?.detail || 'Failed to create post.');
-    } finally { setSubmitting(false); }
-  };
-
-  const catStyle = { general: 'cat-general', recipe: 'cat-recipe', symptom: 'cat-symptom' };
+  const [posts, setPosts] = useState(initialPosts);
+  const [category, setCategory] = useState('All');
+  const [query, setQuery] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState({ title: '', body: '', category: 'Discussion' });
+  const filtered = useMemo(() => posts.filter((post) => (category === 'All' || post.category === category) && `${post.title} ${post.body}`.toLowerCase().includes(query.toLowerCase())), [posts, category, query]);
 
   return (
-    <div className="page" style={{ background: 'var(--bg)' }}>
-      <Navbar />
-      <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
+    <PageShell title="Community Hub" subtitle="A supportive place to share food experiences, recipes, and product discoveries." action={<button className="button primary" onClick={() => setFormOpen(true)}><Plus size={18} /> Start a discussion</button>}>
+      {({ notify }) => <>
+        <section className="community-intro"><div><span className="metric-icon green"><Users size={21} /></span><strong>4,280</strong><p>Supportive members</p></div><div><span className="metric-icon amber"><BookOpen size={21} /></span><strong>186</strong><p>Recipes shared</p></div><div><span className="metric-icon violet"><Star size={21} /></span><strong>932</strong><p>Product reviews</p></div><p><Heart size={19} /> Community experiences are personal stories, not medical advice.</p></section>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h1 style={{ fontSize: '1.8rem' }}>Community Hub</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '.9rem' }}>Share recipes, discuss symptoms, and rate health-friendly products.</p>
-          </div>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? '✕ Cancel' : '+ New Post'}
-          </button>
-        </div>
-
-        {/* New Post Form */}
-        {showForm && (
-          <div className="card fade-in" style={{ marginBottom: '1.5rem', border: '1.5px solid var(--teal)' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Create a Post</h3>
-            <form onSubmit={submit}>
-              <div className="form-group">
-                <label className="form-label">Category</label>
-                <select className="form-select" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  <option value="general">General Discussion</option>
-                  <option value="recipe">Recipe Exchange</option>
-                  <option value="symptom">Symptom Tracking</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="post-title">Title</label>
-                <input id="post-title" type="text" className="form-input" placeholder="What's your post about?"
-                  value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="post-body">Body</label>
-                <textarea id="post-body" className="form-input" rows={4} placeholder="Share your experience, recipe, or question..."
-                  style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                  value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} required />
-              </div>
-              {formError && <div className="alert-item danger" style={{ marginBottom: '1rem' }}><span><AlertTriangle size={18} /></span><p>{formError}</p></div>}
-              <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? <><Loader2 className="spin" size={16} /> Publishing...</> : <><Send size={16} /> Publish Post</>}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Category filter */}
-        <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-          {CATEGORIES.map(({ key, label }) => (
-            <button key={String(key)} onClick={() => setCategory(key)}
-              className={`btn ${category === key ? 'btn-primary' : 'btn-outline'} btn-sm`}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Posts */}
-        {loading && <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3rem', color: 'var(--text-muted)', gap: '0.5rem' }}><Loader2 className="spin" size={20} /> Loading posts…</div>}
-        {!loading && posts.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-            <p style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}><MessageCircle size={32} color="var(--slate)" /></p>
-            <p>No posts yet. Be the first to share!</p>
-          </div>
-        )}
-
-        <div style={{ display: 'grid', gap: '1rem' }}>
-          {posts.map((p) => (
-            <div key={p.id} className="post-card">
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', marginBottom: '.5rem', flexWrap: 'wrap' }}>
-                    <span className={`post-category ${catStyle[p.category] || 'cat-general'}`}>{p.category}</span>
-                    <span style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>by {p.author} · {new Date(p.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <h3 style={{ marginBottom: '.4rem', fontSize: '1rem' }}>{p.title}</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '.88rem', lineHeight: 1.6 }}>{p.body}</p>
-                  {p.tags?.length > 0 && (
-                    <div style={{ display: 'flex', gap: '.4rem', marginTop: '.6rem', flexWrap: 'wrap' }}>
-                      {p.tags.map((t) => <span key={t} style={{ fontSize: '.72rem', background: 'var(--teal-bg)', color: 'var(--teal)', borderRadius: 4, padding: '.15rem .5rem' }}>#{t}</span>)}
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem', alignItems: 'center', minWidth: 60 }}>
-                  <button className="vote-btn up" onClick={() => vote(p.id, 'up')}><ThumbsUp size={14} /> {p.upvotes}</button>
-                  <button className="vote-btn down" onClick={() => vote(p.id, 'down')}><ThumbsDown size={14} /> {p.downvotes}</button>
-                </div>
-              </div>
+        <div className="community-layout">
+          <section className="community-feed">
+            <div className="community-toolbar"><div className="history-search"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search discussions and recipes…" aria-label="Search community" /></div><div className="community-tabs">{['All','Recipes','Product Finds','Discussion'].map((item) => <button className={category === item ? 'active' : ''} onClick={() => setCategory(item)} key={item}>{item}</button>)}</div></div>
+            <div className="post-list">
+              {filtered.map((post) => <article className="community-post surface-panel" key={post.id}>
+                <header><span className="community-avatar">{post.author[0]}</span><div><strong>{post.author}</strong><small>{post.time}</small></div><StatusPill status={post.category === 'Product Finds' ? 'suitable' : 'info'}>{post.category}</StatusPill></header>
+                <h2>{post.title}</h2><p>{post.body}</p><div className="post-tags">{post.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
+                <footer><button onClick={() => setPosts(posts.map((candidate) => candidate.id === post.id ? { ...candidate, likes: candidate.likes + 1 } : candidate))}><ThumbsUp size={16} /> {post.likes}</button><button onClick={() => notify(`${post.comments} community replies opened.`)}><MessageCircle size={16} /> {post.comments} replies</button><button onClick={() => notify('Post saved to your community collection.')}>Save</button></footer>
+              </article>)}
+              {filtered.length === 0 && <div className="empty-state surface-panel"><MessageCircle size={28} /><h3>No discussions found</h3><p>Try another search or be the first to start one.</p></div>}
             </div>
-          ))}
+          </section>
+
+          <aside className="community-side">
+            <section className="surface-panel popular-recipes"><div className="section-title-row compact"><div><h2>Popular recipes</h2><p>Community favorites this week</p></div><BookOpen size={20} color="var(--green-700)" /></div>{['Herby lentil bowl','Berry oat breakfast','Roasted veggie wraps'].map((name,index) => <button onClick={() => notify(`${name} recipe opened.`)} key={name}><span>{index + 1}</span><div><strong>{name}</strong><small>{[128,94,77][index]} saves</small></div></button>)}</section>
+            <section className="surface-panel community-products"><div className="section-title-row compact"><div><h2>Health-friendly finds</h2><p>Highly rated by the community</p></div><Star size={20} color="var(--amber-500)" /></div><div><img src="/assets/oat-seed-crunch.png" alt="Oat & Seed Crunch" /><span><strong>Oat &amp; Seed Crunch</strong><small>4.8 community rating</small><StatusPill status="suitable">Popular choice</StatusPill></span></div></section>
+          </aside>
         </div>
-      </div>
-    </div>
+
+        {formOpen && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setFormOpen(false)}><section className="scan-modal community-modal" role="dialog" aria-modal="true" aria-labelledby="new-post-title"><button className="modal-close" onClick={() => setFormOpen(false)} aria-label="Close"><X size={17} /></button><h2 id="new-post-title">Start a discussion</h2><p>Share a recipe, product find, or food experience with the community.</p><form onSubmit={(event) => { event.preventDefault(); if (!form.title.trim() || !form.body.trim()) return; setPosts([{ id: Date.now(), ...form, author: 'Alex', time: 'Just now', likes: 0, comments: 0, tags: ['new'] }, ...posts]); setFormOpen(false); setForm({ title: '', body: '', category: 'Discussion' }); notify('Your community post was published.'); }}><label htmlFor="post-category">Category</label><select id="post-category" value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}><option>Discussion</option><option>Recipes</option><option>Product Finds</option></select><label htmlFor="post-title">Title</label><input id="post-title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="What would you like to share?" /><label htmlFor="post-body">Your experience</label><textarea id="post-body" value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} rows={4} placeholder="Share helpful context with the community…" /><button className="button primary"><Send size={17} /> Publish post</button></form></section></div>}
+      </>}
+    </PageShell>
   );
 }

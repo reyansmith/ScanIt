@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Leaf, Loader2 } from 'lucide-react';
 import api from '../api/client';
 import useStore from '../store/useStore';
 
@@ -17,19 +17,19 @@ export default function Login() {
     try {
       const { data } = await api.post('/api/auth/login', form);
       setToken(data.access_token);
-      navigate('/dashboard');
+      navigate('/home');
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please try again.');
     } finally { setLoading(false); }
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f8fafb 0%, #e6f5f5 100%)', padding: '2rem' }}>
-      <div className="card fade-in" style={{ width: '100%', maxWidth: 420 }}>
+    <div className="auth-page">
+      <div className="auth-card fade-in">
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ marginBottom: '.5rem', display: 'flex', justifyContent: 'center' }}><Activity size={32} color="var(--text)" /></div>
+          <Link to="/home" className="auth-brand"><span className="brand-mark"><Leaf size={25} /></span><strong>ScanIt</strong></Link>
           <h2>Welcome back</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '.9rem', marginTop: '.3rem' }}>Sign in to MediScan</p>
+          <p>Sign in to continue making better choices.</p>
         </div>
 
         {error && (
@@ -49,13 +49,13 @@ export default function Login() {
             <input id="login-password" type="password" className="form-input" placeholder="••••••••"
               value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
           </div>
-          <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: '.5rem' }} disabled={loading}>
-            {loading ? <><Loader2 className="spin" size={16} /> Signing in...</> : 'Sign In →'}
+          <button type="submit" className="button primary auth-submit" disabled={loading}>
+            {loading ? <><Loader2 className="spin" size={16} /> Signing in...</> : 'Sign In'}
           </button>
         </form>
 
         <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '.88rem', color: 'var(--text-muted)' }}>
-          Don't have an account? <Link to="/register" style={{ color: 'var(--teal)', fontWeight: 600 }}>Create one free</Link>
+          Don't have an account? <Link to="/register">Create one free</Link>
         </p>
       </div>
     </div>

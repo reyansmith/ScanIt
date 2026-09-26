@@ -1,171 +1,124 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Bell, Camera, Keyboard, AlertTriangle, Search, Loader2, ShieldAlert, Bot, FlipHorizontal, RefreshCw } from 'lucide-react';
-import api from '../api/client';
-import Navbar from '../components/Navbar';
-import MediVerdict from '../components/MediVerdict';
-import NutritionCard from '../components/NutritionCard';
-import MediBot from '../components/MediBot';
-import useStore from '../store/useStore';
+import { useState } from 'react';
+import { Barcode, Check, ChevronDown, ChevronRight, CircleAlert, Info, ScanLine, ShoppingCart, Sparkles, Upload } from 'lucide-react';
+import AppShell from '../components/AppShell';
+
+const ingredients = [
+  { name: 'Whole grains', detail: 'Contains whole grain oats, wheat and barley', status: 'positive' },
+  { name: 'Added sugars', detail: 'Moderate amount (9g per serving)', status: 'positive' },
+  { name: 'Sodium', detail: '230mg per serving (relatively high for your low-sodium preference)', status: 'caution', expandable: true },
+  { name: 'Allergens', detail: 'No major allergens detected', status: 'positive' },
+  { name: 'Other', detail: 'No concerning additives detected', status: 'positive' },
+];
+
+const alternatives = [
+  { name: 'Oat & Seed Crunch', score: 92, label: 'Excellent Match', note: 'Higher in fiber, lower sodium', image: '/assets/oat-seed-crunch.png' },
+  { name: 'Simple Grain Flakes', score: 88, label: 'Great Match', note: 'Lower sodium, similar taste', image: '/assets/simple-grain-flakes.png' },
+];
 
 export default function Scanner() {
-  const [mode, setMode] = useState('manual'); // 'camera' | 'manual'
-  const [barcode, setBarcode] = useState('');
+  const [expandedIngredient, setExpandedIngredient] = useState('');
+  const [toast, setToast] = useState('');
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanQuery, setScanQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
-  const [cameraError, setCameraError] = useState('');
-  const [mirrored, setMirrored] = useState(false);
-  const [facingMode, setFacingMode] = useState('environment'); // 'environment' | 'user'
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const setCurrentScan = useStore((s) => s.setCurrentScan);
 
-  // Stop camera
-  const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-  }, []);
-
-  // Start camera
-  const startCamera = useCallback(async () => {
-    stopCamera();
-    try {
-      setCameraError('');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
-      streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch {
-      setCameraError('Camera access denied or unavailable. Please use manual entry below.');
-      setMode('manual');
-    }
-  }, [facingMode, stopCamera]);
-
-  useEffect(() => {
-    if (mode === 'camera') startCamera();
-    else stopCamera();
-    return stopCamera;
-  }, [mode, startCamera, stopCamera]);
-
-  const toggleFacingMode = () => {
-    setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
+  const notify = (message) => {
+    setToast(message);
+    window.setTimeout(() => setToast(''), 2600);
   };
 
-  const scan = async (code) => {
-    const bc = (code || barcode).trim();
-    if (!bc) { setError('Please enter or scan a barcode.'); return; }
-    setError(''); setLoading(true); setResult(null);
-    try {
-      const { data } = await api.post('/api/scan-product', { barcode: bc });
-      setResult(data);
-      setCurrentScan(data);
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Product not found. Try a different barcode.');
-    } finally { setLoading(false); }
+  const analyze = (event) => {
+    event.preventDefault();
+    if (!scanQuery.trim()) return;
+    setLoading(true);
+    window.setTimeout(() => {
+      setLoading(false);
+      setScanOpen(false);
+      notify(`Analysis ready for ${scanQuery.trim()}.`);
+      setScanQuery('');
+    }, 850);
   };
 
   return (
-    <div className="page" style={{ background: 'var(--bg)' }}>
-      <Navbar />
-      <div className="container" style={{ maxWidth: 720, paddingTop: '2rem', paddingBottom: '5rem' }}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h1 style={{ fontSize: '1.8rem' }}>Product Scanner</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '.9rem' }}>Scan or enter a barcode to get your personalized MediVerdict™</p>
+    <AppShell onDemoNavigate={notify}>
+      <main className="analysis-page">
+        <div className="analysis-toolbar">
+          <button className="back-link" onClick={() => notify('Returned to search results.')}><span aria-hidden="true">←</span> Back to results</button>
+          <span className="scan-date"><Barcode size={16} /> Scanned on Sep 27, 2026</span>
         </div>
 
-        {/* Mode tabs */}
-        <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1.5rem' }}>
-          {[['camera', <><Camera size={16} /> Camera</>], ['manual', <><Keyboard size={16} /> Manual Entry</>]].map(([m, label]) => (
-            <button key={m} onClick={() => setMode(m)}
-              className={`btn ${mode === m ? 'btn-primary' : 'btn-outline'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Camera view */}
-        {mode === 'camera' && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            {cameraError && <div className="alert-item caution"><span><AlertTriangle size={18} /></span><p>{cameraError}</p></div>}
-            <div className="scanner-viewport">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  transform: mirrored ? 'scaleX(-1)' : 'none',
-                  transition: 'transform 0.2s ease',
-                }}
-              />
-              <div className="scanner-overlay">
-                <div className="scan-frame"><div className="scan-line" /></div>
+        <section className="analysis-hero" aria-labelledby="product-title">
+          <div className="product-identity">
+            <img className="product-image" src="/assets/whole-grain-cereal.png" alt="Harvest & Co. Whole Grain Cereal package" />
+            <div className="product-copy">
+              <p className="product-brand">Harvest &amp; Co.</p>
+              <h1 id="product-title">Whole Grain Cereal</h1>
+              <p className="product-description">A hearty blend of whole grains for everyday energy.</p>
+              <div className="nutrition-highlights" aria-label="Nutrition highlights">
+                <div><strong>45g</strong><span>Serving size</span></div>
+                <div><strong>6g</strong><span>Fiber<br />(24% DV)</span></div>
+                <div><strong>9g</strong><span>Total sugar<br />per serving</span></div>
               </div>
-            </div>
-
-            {/* Camera Controls */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-              <button
-                className={`btn ${mirrored ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                onClick={() => setMirrored(!mirrored)}
-              >
-                <FlipHorizontal size={14} /> {mirrored ? 'Unmirror Feed' : 'Mirror Feed'}
-              </button>
-
-              <button className="btn btn-outline btn-sm" onClick={toggleFacingMode}>
-                <RefreshCw size={14} /> Switch Camera ({facingMode === 'environment' ? 'Back' : 'Front'})
-              </button>
+              <div className="product-tags"><span>Whole Grains</span><span>Good Source of Fiber</span><span>No Detected Allergens</span></div>
             </div>
           </div>
-        )}
 
-        {/* Manual entry */}
-        <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', gap: '.75rem', alignItems: 'flex-end' }}>
-            <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-              <label className="form-label" htmlFor="barcode-input">Barcode Number</label>
-              <input id="barcode-input" type="text" className="form-input mono"
-                placeholder="e.g. 3017620422003 (Nutella)"
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && scan()} />
+          <aside className="score-panel" aria-label="Personalized compatibility score">
+            <div className="score-summary">
+              <div className="score-ring" aria-label="82 out of 100"><strong>82</strong><span>/100</span></div>
+              <div><h2>Good Match</h2><p>How well this product fits<br />your current profile.</p></div>
             </div>
-            <button className="btn btn-primary" onClick={() => scan()} disabled={loading} style={{ whiteSpace: 'nowrap' }}>
-              {loading ? <><Loader2 className="spin" size={16} /> Analyzing...</> : <><Search size={16} /> Scan</>}
-            </button>
-          </div>
-          {error && <div className="alert-item danger" style={{ marginTop: '.75rem' }}><span><ShieldAlert size={18} /></span><p style={{ fontSize: '.88rem' }}>{error}</p></div>}
-        </div>
+            <p className="score-explanation">This product aligns well with your health preferences, with a few areas to keep in mind.</p>
+            <div className="score-actions">
+              <button className="button primary" onClick={() => setScanOpen(true)}><ScanLine size={19} /> Scan another product</button>
+              <button className="button secondary" onClick={() => notify('Whole Grain Cereal added to your shopping list.')}><ShoppingCart size={19} /> Add to shopping list</button>
+              <button className="button secondary" onClick={() => document.getElementById('alternatives')?.scrollIntoView({ behavior: 'smooth' })}>⇄ <span>Compare</span></button>
+            </div>
+          </aside>
+        </section>
 
-        {/* Results */}
-        {result && (
-          <div className="fade-in">
-            <MediVerdict verdict={result.verdict} flags={result.flags} />
-            <NutritionCard product={result.product} flags={result.flags} />
+        <section className="match-reasons" aria-label="Compatibility explanation">
+          <div className="reason-block positive"><span className="reason-icon"><Check size={23} /></span><div><h2>Why this is a good match</h2><ul><li>High in fiber, which supports your digestive health goals</li><li>Made with whole grains and simple ingredients</li><li>No detected allergens based on your profile</li><li>Fits well with your preference for lower added sugars</li></ul></div></div>
+          <div className="reason-block caution"><span className="reason-icon"><CircleAlert size={23} /></span><div><h2>Things to watch</h2><ul><li>Sodium is relatively high for your low-sodium preference.</li></ul><p>This doesn’t mean you can’t enjoy it — consider smaller portions or less frequent consumption.</p></div></div>
+        </section>
 
-            {result.alert_summaries?.length > 0 && (
-              <div className="card" style={{ marginTop: '1rem' }}>
-                <h3 style={{ marginBottom: '.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Bell size={18} /> Alert Details</h3>
-                {result.alert_summaries.map((a, i) => (
-                  <div key={i} className={`alert-item ${result.verdict === 'DANGER' ? 'danger' : 'caution'}`}>
-                    <span>{result.verdict === 'DANGER' ? <ShieldAlert size={18} /> : <AlertTriangle size={18} />}</span>
-                    <p style={{ fontSize: '.85rem' }}>{a}</p>
-                  </div>
-                ))}
+        <div className="analysis-body">
+          <div className="primary-content">
+            <section className="ingredient-section" aria-labelledby="ingredient-heading">
+              <div className="section-heading-row"><div><h2 id="ingredient-heading">Ingredient Check</h2><p>We analyzed ingredients against your health profile and preferences.</p></div><button onClick={() => notify('All ingredient details expanded.')}>View all ingredients <ChevronDown size={15} /></button></div>
+              <div className="ingredient-list">
+                {ingredients.map((ingredient) => {
+                  const open = expandedIngredient === ingredient.name;
+                  return <div className={`ingredient-row-wrap ${open ? 'open' : ''}`} key={ingredient.name}>
+                    <button className="ingredient-row" onClick={() => ingredient.expandable && setExpandedIngredient(open ? '' : ingredient.name)} aria-expanded={ingredient.expandable ? open : undefined}>
+                      <span className={`status-icon ${ingredient.status}`}>{ingredient.status === 'caution' ? '!' : <Check size={14} />}</span><strong>{ingredient.name}</strong><span>{ingredient.detail}</span>{ingredient.expandable ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
+                    </button>
+                    {open && <div className="ingredient-detail"><strong>Why ScanIt flagged this</strong><p>Your profile includes a lower-sodium preference. At 230mg per serving, this product is above the 180mg target you set for breakfast foods.</p></div>}
+                  </div>;
+                })}
               </div>
-            )}
+            </section>
 
-            <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--teal-bg)', borderRadius: 10, border: '1px solid rgba(17,24,39,.1)' }}>
-              <p style={{ fontSize: '.85rem', color: 'var(--text)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Bot size={18} /> Have questions about this product? Ask MediBot in the bottom-right corner!
-              </p>
-            </div>
+            <section id="alternatives" className="alternatives-section" aria-labelledby="alternative-heading">
+              <div className="section-heading-row"><div><h2 id="alternative-heading">Healthier Alternatives</h2><p>Similar products that may be a better fit for your profile.</p></div><button onClick={() => notify('Showing more better-match options.')}>View more options <span aria-hidden="true">→</span></button></div>
+              <div className="alternative-grid">
+                {alternatives.map((item) => <article className="alternative-card" key={item.name}>
+                  <img src={item.image} alt={`${item.name} package`} />
+                  <div className="alternative-info"><small>Harvest &amp; Co.</small><h3>{item.name}</h3><p>{item.note}</p></div>
+                  <div className="mini-score"><div className="mini-score-ring"><strong>{item.score}</strong><span>/100</span></div><small>{item.label}</small></div>
+                  <div className="alternative-actions"><button onClick={() => notify(`${item.name} opened.`)}>View Product</button><button onClick={() => notify(`Comparing Whole Grain Cereal with ${item.name}.`)}>Compare</button></div>
+                </article>)}
+              </div>
+            </section>
           </div>
-        )}
-      </div>
-      <MediBot />
-    </div>
+
+          <aside className="ai-insight"><div className="ai-label"><Sparkles size={18} /> AI Insight</div><p>This is a solid everyday cereal choice for your profile. If you’re watching sodium, try pairing it with low-sodium milk or a fresh fruit topping.</p><button onClick={() => notify('Ask ScanIt is ready for your question.')}>Ask ScanIt <span>→</span></button></aside>
+        </div>
+        <footer className="medical-disclaimer"><Info size={15} /> UI demonstration, not medical advice. Always consult a healthcare professional for personalized guidance.</footer>
+      </main>
+
+      {scanOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setScanOpen(false)}><section className="scan-modal" role="dialog" aria-modal="true" aria-labelledby="scan-modal-title"><button className="modal-close" onClick={() => setScanOpen(false)} aria-label="Close">×</button><span className="scan-modal-icon"><ScanLine size={26} /></span><h2 id="scan-modal-title">What are you eating today?</h2><p>Search for a product or upload a clear photo of its label.</p><form onSubmit={analyze}><label htmlFor="product-search">Product name</label><input id="product-search" autoFocus value={scanQuery} onChange={(event) => setScanQuery(event.target.value)} placeholder="Search a product…" /><div className="modal-actions"><button type="button" className="button secondary" onClick={() => notify('Image upload is ready for a product photo.')}><Upload size={18} /> Upload Image</button><button className="button primary" disabled={!scanQuery.trim() || loading}>{loading ? 'Analyzing…' : 'Analyze product'}</button></div></form></section></div>}
+      {toast && <div className="toast" role="status"><Check size={17} /> {toast}</div>}
+    </AppShell>
   );
 }
