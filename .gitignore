@@ -1,0 +1,27 @@
+# Build output
+dist/
+build/
+
+# Local/generated tool state
+.venv/
+__pycache__/
+.pip-audit-cache/
+
+# Environment secrets
+.env
+!.env.example
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
