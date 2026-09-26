@@ -1,31 +1,32 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import useStore from './store/useStore';
-import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ProfileSetup from './pages/ProfileSetup';
+import Home from './pages/Home';
+import SmartShopping from './pages/SmartShopping';
 import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
+import ScanHistory from './pages/ScanHistory';
+import PersonalAI from './pages/PersonalAI';
 import Community from './pages/Community';
-
-function PrivateRoute({ children }) {
-  const token = useStore((s) => s.token);
-  return token ? children : <Navigate to="/login" replace />;
-}
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Landing />} />
-        {/* Public alias */ }
+        <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/profile-setup" element={<PrivateRoute><ProfileSetup /></PrivateRoute>} />
-        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-        <Route path="/scanner" element={<PrivateRoute><Scanner /></PrivateRoute>} />
-        <Route path="/community" element={<PrivateRoute><Community /></PrivateRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/shopping" element={<SmartShopping />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/scanner" element={<Scanner />} />
+        <Route path="/history" element={<ScanHistory />} />
+        <Route path="/health" element={<ProfileSetup />} />
+        <Route path="/profile-setup" element={<Navigate to="/health" replace />} />
+        <Route path="/ai" element={<PersonalAI />} />
+        <Route path="/community" element={<Community />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </BrowserRouter>
   );
